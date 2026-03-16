@@ -14,7 +14,7 @@ We solve a five-species reaction-diffusion PDE system modeling breast tumor–ba
 |**I**|Cytokine concentration|
 |**S**|Signaling molecule concentration|
 
-The system is defined on a 2D quadrangle domain with Neumann (zero-flux) boundary conditions and Gaussian-type initial conditions with stochastic perturbations.
+The system is defined on a 2D quadrangle domain with Neumann (zero-flux) boundary conditions and Gaussian-type initial conditions.
 
 ## Repository Structure
 
@@ -85,7 +85,7 @@ Generates 10 figure types per study: domain max/mean/min vs time, tumor suppress
 If you use this code, please cite:
 
 ```bibtex
-@article{farkane2026tumor,
+@article{farkaneLassounonl2026tumor,
   title={Mathematical Modeling of Cancer–Bacterial Therapy: Analysis and
 
 Numerical Simulation via Physics-Informed Neural Networks (PINNs)},
