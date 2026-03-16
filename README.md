@@ -1,6 +1,6 @@
 # Deep Learning for Tumor-Bacteria PDE Systems: A Physics-Informed Neural Network Approach
 
-This repository contains the code accompanying the paper by **A. Farkane \& C. Lassounon**.
+This repository contains the code accompanying the paper by **A. Farkane \& D. Lassounon**.
 
 ## Problem Description
 
@@ -86,9 +86,7 @@ If you use this code, please cite:
 
 ```bibtex
 @article{farkaneLassounonl2026tumor,
-  title={Mathematical Modeling of Cancer–Bacterial Therapy: Analysis and
-
-Numerical Simulation via Physics-Informed Neural Networks (PINNs)},
+  title={Mathematical Modeling of Cancer–Bacterial Therapy: Analysis and Numerical Simulation via Physics-Informed Neural Networks (PINNs)},
   author={Farkane, Ayoub and Lassounon, David.},
   year={2026}
 }
