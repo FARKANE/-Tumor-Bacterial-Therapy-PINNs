@@ -14,11 +14,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 if torch.cuda.is_available():
     print(f"CUDA Device: {torch.cuda.get_device_name(0)}")
-    print(f"CUDA Memory: {torch.cuda.get_device_properties(0).total_mem / 1e9:.2f} GB")
+    print(f"CUDA Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
 
 
 # =============================================================================
-# QUADRANGLE GEOMETRY
+# QUADRANGLE GEOMETRY  (replaces MeshGeometry / breast mesh)
 # =============================================================================
 
 class QuadGeometry:
@@ -194,7 +194,7 @@ class PINN_2D_MultiVariable(nn.Module):
 
 
 # =============================================================================
-# PINN
+# PINN  (unchanged — only geometry object differs)
 # =============================================================================
 
 class BreastTumorPINN:
@@ -238,6 +238,9 @@ class BreastTumorPINN:
         t_ic   = torch.zeros(n_ic_total, 1)
         xy_bc  = self.geometry.sample_boundary(n_bc_total)
         t_bc   = torch.rand(n_bc_total,1)*(t_domain[1]-t_domain[0])+t_domain[0]
+
+        def mk(a, b, xp, tp, xi, ti, xb, tb):
+            return PINNDataset(xp[a:b], tp[a:b], xi[a:b], ti[a:b], xb[a:b], tb[a:b])
 
         tr_ds  = PINNDataset(xy_pde[:n_pde_tr], t_pde[:n_pde_tr],
                              xy_ic[:n_ic_tr],   t_ic[:n_ic_tr],
@@ -291,7 +294,8 @@ class BreastTumorPINN:
         p = self.params
         f_T = T_t - p['D_T']*T_lap - p['rho_T']*T*(1-T/p['theta']) + p['delta_T']*T + p['alpha_S']*S*T
         f_B = B_t - p['D_B']*B_lap - p['rho_B']*B*(p['K_H']/(p['K_H']+O+1e-8)) + p['delta_B']*B + p['beta_I']*I*B
-        f_O = O_t - p['D_O']*O_lap + p['gamma_T']*T*O - p['gamma_E']*(p['O_ext']-O)
+        f_O = O_t - p['D_O']*O_lap + p['gamma_T']*T*O  - p['gamma_E']*(p['O_ext']-O)
+        #f_O = O_t - p['D_O']*O_lap + p['gamma_T']*T*O + p['beta_B']*B*O - p['gamma_E']*(p['O_ext']-O)
         f_I = I_t - p['D_I']*I_lap - p['beta_T']*T + p['delta_I']*I
         f_S = S_t - p['D_S']*S_lap - p['beta_B_signal']*B + p['delta_S']*S
 
@@ -303,40 +307,31 @@ class BreastTumorPINN:
 
         return f_T, f_B, f_O, f_I, f_S, grad_T, grad_B, grad_O, grad_I, grad_S
 
-    # ── initial conditions with NOISE ─────────────────────────────
+    # ── initial conditions ────────────────────────────────────────
     def initial_conditions(self, x, y):
-        """
-        Initial conditions with noise as per equations:
-        T_0(x,y) = 0.1*θ*exp(-||r-x_T||²/(2σ_T²)) + α₁*noise(x)
-        B_0(x,y) = 10⁻⁴*θ*exp(-||r-x_B||²/(2σ_B²)) + α₁*noise(x)
-        O_0(x,y) = O_ext
-        I_0(x,y) = 10⁻³ ng/mL
-        S_0(x,y) = 0
-        """
+        g = self.geometry
+        x_center   = (g.x_max + g.x_min) / 2
+        y_center   = (g.y_max + g.y_min) / 2
+        domain_size = max(g.x_max - g.x_min, g.y_max - g.y_min)
+
         p = self.params
+        tx = p.get('tumor_x', x_center)
+        ty = p.get('tumor_y', y_center)
+        ts = p.get('tumor_size', domain_size / 5)
 
-        # Tumor initial condition
-        r2_T = (x - p['tumor_x'])**2 + (y - p['tumor_y'])**2
-        T0_base = 1 * p['theta'] * torch.exp(-r2_T / (2 * p['sigma_T']**2))
-        noise_T = p['alpha_noise'] * torch.randn_like(x)
-        T0 = T0_base + noise_T
-        T0 = torch.clamp(T0, min=0.0)
+        r2  = (x - tx)**2 + (y - ty)**2
+        T0  = 1.0 * torch.exp(-r2 / (2 * ts**2))
 
-        # Bacteria initial condition
-        r2_B = (x - p['bacteria_x'])**2 + (y - p['bacteria_y'])**2
-        B0_base = 0.2 * p['theta'] * torch.exp(-r2_B / (2 * p['sigma_B']**2))
-        noise_B = p['alpha_noise'] * torch.rand_like(x)
-        B0 = B0_base + noise_B
-        B0 = torch.clamp(B0, min=0.0)
+        bx  = p.get('bacteria_x', g.x_min + 0.3*(g.x_max - g.x_min))
+        by  = p.get('bacteria_y', g.y_min + 0.6*(g.y_max - g.y_min))
+        bs  = p.get('bacteria_spread', domain_size / 8)
 
-        # Oxygen (constant)
-        O0 = p['O_ext'] * torch.ones_like(x)
+        rb2 = (x - bx)**2 + (y - by)**2
+        B0  = 0.3 * torch.exp(-rb2 / (2 * bs**2))
 
-        # Cytokines (constant at 10^-3)
-        I0 = 1e-3 * torch.ones_like(x)
-
-        # Signal (zero)
-        S0 = torch.zeros_like(x)
+        O0  = p['O_ext'] * torch.ones_like(x)
+        I0  = 0.01       * torch.ones_like(x)
+        S0  = torch.zeros_like(x)
 
         return T0, B0, O0, I0, S0
 
@@ -485,7 +480,7 @@ class BreastTumorPINN:
 
 
 # =============================================================================
-# VISUALIZATION
+# VISUALIZATION  (no internal markers)
 # =============================================================================
 
 def plot_results(pinn, times=[0, 5, 10, 15, 20, 25, 30],
@@ -555,11 +550,11 @@ def plot_initial_conditions(pinn, save_path='initial_conditions_quad.png'):
 
 if __name__ == '__main__':
 
-    # ── 1. Domain ─────────────────────────────────────────────────
+    # ── 1. Domain (edit dimensions here) ─────────────────────────
     geo = QuadGeometry(
         x_min=0.0, x_max=6.0,
         y_min=0.0, y_max=6.0,
-        nx=60, ny=60
+        nx=60, ny=60          # 3721 nodes, 7200 triangles
     )
 
     # visualize mesh
@@ -572,51 +567,24 @@ if __name__ == '__main__':
     plt.close()
     print("Mesh saved → quad_mesh.png")
 
-    # ── 2. Physical parameters (FROM TABLE) ──────────────────────
+    # ── 2. Physical parameters ────────────────────────────────────
     params = {
-        # Diffusion coefficients
-        'D_T': 0.01,           # mm²/day  (scaled)
-        'D_B': 0.1,            # mm²/day  (scaled)
-        'D_O': 1.0,            # mm²/day  (scaled)
-        'D_I': 0.5,            # mm²/day  (scaled)
-        'D_S': 0.4,            # mm²/day  (scaled)
+        'D_T': 0.01, 'D_B': 0.1, 'D_O': 1.0, 'D_I': 0.5, 'D_S': 0.3,
+        'rho_T': 0.3, 'theta': 1.0, 'delta_T': 0.05, 'alpha_S': 0.2,
+        'rho_B': 0.5, 'K_H': 0.1, 'delta_B': 0.1, 'beta_I': 0.3,
+        'gamma_T': 0.2, 'beta_B': 0.1, 'gamma_E': 0.5, 'O_ext': 0.2,
+        'beta_T': 0.1, 'delta_I': 0.2,
+        'beta_B_signal': 0.4, 'delta_S': 0.3,
 
-        # Tumor parameters
-        'rho_T': 0.43,         # day⁻¹
-        'theta': 1.0,          # normalized (carrying capacity)
-        'delta_T': 0.32,       # day⁻¹ (Cooper 2010)
-        'alpha_S': 2.97e-6,    # (cell·day)⁻¹
+        # Tumor IC  (centre of quad domain)
+        'tumor_x'   : (geo.x_min + geo.x_max) / 2,
+        'tumor_y'   : (geo.y_min + geo.y_max) / 2,
+        'tumor_size': (geo.x_max - geo.x_min) / 5,       # large IC
 
-        # Bacteria parameters
-        'rho_B': 0.5,          # day⁻¹
-        'K_H': 1.12e-5,        # normalized
-        'delta_B': 0.001,      # day⁻¹
-        'beta_I': 2.97e-6,     # (ng·mL⁻¹·day)⁻¹
-
-        # Oxygen parameters
-        'gamma_T': 3.1e-5,     # day⁻¹ (Welter 2016)
-        'beta_B': 0.1,         # day⁻¹ (bacterial O₂ consumption)
-        'gamma_E': 0.5,        # day⁻¹ (mid-range of 0.03-0.78)
-        'O_ext': 0.2,          # normalized (baseline, from range 0.2-1.37)
-
-        # Cytokine parameters
-        'beta_T': 4.32,        # ng·mL⁻¹·cell⁻¹·day⁻¹
-        'delta_I': 0.51,       # day⁻¹
-
-        # Signal parameters
-        'beta_B_signal': 4.636,  # µMol·day⁻¹
-        'delta_S': 0.477,        # day⁻¹
-
-        # Initial condition parameters
-        'tumor_x': 3.0,
-        'tumor_y': 3.0,
-        'sigma_T': 0.6,
-
-        'bacteria_x': 1.8,
-        'bacteria_y': 3.6,
-        'sigma_B': 0.375,
-
-        'alpha_noise': 0.1,
+        # Bacteria injection  (30 % x, 60 % y)
+        'bacteria_x'     : geo.x_min + 0.3*(geo.x_max - geo.x_min),
+        'bacteria_y'     : geo.y_min + 0.6*(geo.y_max - geo.y_min),
+        'bacteria_spread': (geo.x_max - geo.x_min) / 8,
     }
 
     # ── 3. Build PINN ─────────────────────────────────────────────
