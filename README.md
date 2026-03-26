@@ -86,10 +86,10 @@ Generates 10 figure types per study: domain max/mean/min vs time, tumor suppress
 
 If you use this code, please cite:
 
-```bibtex
-@article{farkaneLassounonl2026tumor,
-  title={Mathematical Modeling of Cancer–Bacterial Therapy: Analysis and Numerical Simulation via Physics-Informed Neural Networks (PINNs)},
-  author={Farkane, Ayoub and Lassounon, David.},
+```@article{farkane2026mathematical,
+  title={Mathematical Modeling of Cancer-Bacterial Therapy: Analysis and Numerical Simulation via Physics-Informed Neural Networks},
+  author={Farkane, Ayoub and Lassounon, David},
+  journal={arXiv preprint arXiv:2603.19326},
   year={2026}
 }
 ```
