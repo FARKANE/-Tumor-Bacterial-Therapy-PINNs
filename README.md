@@ -82,7 +82,7 @@ Generates 10 figure types per study: domain max/mean/min vs time, tumor suppress
 * PyTorch ≥ 2.0 (CUDA recommended)
 * NumPy, Matplotlib
 
-## Comparison with FEM (Section 6.5)
+## Comparison with FEM (Appendix A)
 
 Subfolder [`fem_comparison/`](fem_comparison/) contains the code and data
 layout for the Method-of-Manufactured-Solutions benchmark of PINN against

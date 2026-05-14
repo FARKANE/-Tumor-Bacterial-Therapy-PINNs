@@ -1,6 +1,6 @@
 # FEM vs PINN Comparison — Method of Manufactured Solutions
 
-This subfolder accompanies Section 6.5 of the paper. It benchmarks the
+This subfolder accompanies Appendix A of the paper. It benchmarks the
 PINN framework against a $\mathbb{P}_1$ finite-element method on a test
 case where the exact solution is known, using the Method of Manufactured
 Solutions (Roache, 2002).
@@ -105,7 +105,7 @@ On the $91 \times 91$ evaluation grid, max $L^2$ errors over $t \in [0,1]$
 
 The PINN is more accurate than FEM on $T, B, I, S$ (factors of $28$,
 $3.3$, $2.3$, $2.0$ respectively); FEM is more accurate on $O$ (factor
-of $5$). See Section 6.5 of the paper for the interpretation.
+of $5$). See Appendix A of the paper for the interpretation.
 
 ## Running on Google Colab
 
