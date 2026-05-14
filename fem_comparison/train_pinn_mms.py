@@ -1,36 +1,9 @@
 """
 =============================================================================
-PINN vs FEM — NEW MANUFACTURED SOLUTION (Biological Scale)  [CORRECTED]
+PINN vs FEM — MANUFACTURED SOLUTION (Biological Scale)  
 =============================================================================
-Corrections vs. the previous version:
 
-  1. CRITICAL: Neumann BC was penalizing BOTH ∂_x u and ∂_y u at every
-     boundary point. On a square ∂[0,1]², ∂_n u = 0 means only ∂_x u = 0
-     on the x-faces (left/right) and only ∂_y u = 0 on the y-faces
-     (bottom/top); the tangential derivative is NOT zero for the exact
-     solution. Boundary points are now generated separately for each
-     orientation and only the normal component is penalized.
-
-  2. PDE source terms are now detached from the autograd graph (they do
-     not depend on network parameters), saving memory and a useless
-     backward pass through them.
-
-  3. PDE residual loss is normalized per variable. The five variables
-     have very different scales (T ~ 0.4, I ~ 0.02, S ~ 0.05) and very
-     different diffusivities (D_O = 1.0 vs D_T = 0.01); summing raw
-     mean(r**2) lets T dominate the gradient and starves I, S.
-
-  4. Relative L2 error reporting starts at t = 0.1 for B, I, S because
-     these start at zero and ||u_ex(.,t)||_2 → 0 as t → 0+, making the
-     ratio numerically meaningless at the smallest times. We also report
-     absolute L2 error for completeness.
-
-  5. Replaced deprecated torch.FloatTensor(.) with torch.as_tensor(.).
-
-  6. After training, a one-shot diagnostic checks ∂_y T(0, 0.5, 0.3)
-     against the analytical value -0.574 to confirm the BC fix took.
-
-Manufactured solution (unchanged, matches the LaTeX document):
+Manufactured solution:
   φ(x,y) = cos(πx)cos(πy),   Δφ = -2π² φ
   T_ex = (0.4 + 0.2φ) e^{-0.3t}        ∈ [0.2, 0.6]
   B_ex = (0.08 + 0.03φ)(1 - e^{-0.5t})  ∈ [0, 0.11]
