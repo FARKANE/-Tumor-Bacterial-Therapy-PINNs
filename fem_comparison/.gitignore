@@ -1,0 +1,19 @@
+# Training output directory (large intermediate files, plots, etc.)
+# Note: the trained model `pinn_bio_mms_model.pt` is committed directly
+# into `fem_comparison/`, not under `pinn_bio_mms/`, so it is not ignored.
+pinn_bio_mms/
+
+# Comparison outputs
+comparison_results/
+
+# FEM reference data — distributed as a GitHub Release asset, not committed
+Data/
+Data.zip
+
+# Python caches
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Colab artifacts
+*.colab

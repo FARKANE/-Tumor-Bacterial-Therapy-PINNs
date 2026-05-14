@@ -82,6 +82,35 @@ Generates 10 figure types per study: domain max/mean/min vs time, tumor suppress
 * PyTorch ≥ 2.0 (CUDA recommended)
 * NumPy, Matplotlib
 
+## Comparison with FEM (Section 6.5)
+
+Subfolder [`fem_comparison/`](fem_comparison/) contains the code and data
+layout for the Method-of-Manufactured-Solutions benchmark of PINN against
+a $\mathbb{P}_1$ finite element method, reported in Section 6.5 of the
+paper.
+
+**One-click reproduction in Colab (no setup):**
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/FARKANE/-Tumor-Bacterial-Therapy-PINNs/blob/main/fem_comparison/PINN_vs_FEM_SelfBootstrap.ipynb)
+
+The Colab notebook clones this repo, downloads the FEM reference data
+(`Data.zip`) from the [latest release](../../releases) asset, loads the
+committed PINN checkpoint, runs the full comparison, and offers all
+figures + the LaTeX table as a downloadable zip. Roughly 3 minutes on
+a free CPU runtime.
+
+**Local reproduction:**
+
+​```bash
+cd fem_comparison
+pip install -r requirements.txt
+python train_pinn_mms.py        # ~2.4 h on a Tesla T4 GPU
+# (obtain FEM reference data, see fem_comparison/README.md)
+python compare_pinn_fem.py      # produces figures + LaTeX table
+​```
+
+See [`fem_comparison/README.md`](fem_comparison/README.md) for full
+details and expected results.
+
 ## Citation
 
 If you use this code, please cite:
